@@ -1,6 +1,6 @@
 import { PUBLIC_CLIENT } from "@/constants/client";
 import { FACTORY_ABI } from "@/constants/factory";
-import { Hex, stringify, toHex } from "viem";
+import { Hex, stringify, toHex, keccak256 } from "viem";
 
 export async function GET(_req: Request, { params }: { params: { id: Hex } }) {
   const { id } = params;
@@ -8,11 +8,14 @@ export async function GET(_req: Request, { params }: { params: { id: Hex } }) {
     return Response.json(JSON.parse(stringify({ error: "id is required" })));
   }
 
+  // Hash the ID to ensure it fits within 256-bit range for smart contract
+  const hashedId = keccak256(id);
+
   const user = await PUBLIC_CLIENT.readContract({
     address: process.env.NEXT_PUBLIC_FACTORY_CONTRACT_ADDRESS as Hex,
     abi: FACTORY_ABI,
     functionName: "getUser",
-    args: [BigInt(id)],
+    args: [BigInt(hashedId)],
   });
 
   //const balance = await PUBLIC_CLIENT.getBalance({ address: user.account });

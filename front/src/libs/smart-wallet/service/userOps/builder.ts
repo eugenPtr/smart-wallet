@@ -13,6 +13,7 @@ import {
   parseAbi,
   toHex,
   encodeAbiParameters,
+  keccak256,
   Address,
   zeroAddress,
 } from "viem";
@@ -230,7 +231,9 @@ export class UserOpBuilder {
   private async _calculateSmartWalletAddress(
     id: Hex,
   ): Promise<{ account: Address; publicKey: readonly [Hex, Hex] }> {
-    const user = await this.factoryContract.read.getUser([BigInt(id)]);
+    // Hash the ID to ensure it fits within 256-bit range for smart contract
+    const hashedId = keccak256(id);
+    const user = await this.factoryContract.read.getUser([BigInt(hashedId)]);
     return { account: user.account, publicKey: user.publicKey };
   }
 

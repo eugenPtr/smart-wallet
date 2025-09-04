@@ -1,6 +1,6 @@
 import { CHAIN, PUBLIC_CLIENT, transport } from "@/constants";
 import { FACTORY_ABI } from "@/constants/factory";
-import { Hex, createWalletClient, toHex, zeroAddress } from "viem";
+import { Hex, createWalletClient, toHex, zeroAddress, keccak256 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
 export async function POST(req: Request) {
@@ -13,11 +13,14 @@ export async function POST(req: Request) {
     transport,
   });
 
+  // Hash the ID to ensure it fits within 256-bit range for smart contract
+  const hashedId = keccak256(id);
+
   const user = await PUBLIC_CLIENT.readContract({
     address: process.env.NEXT_PUBLIC_FACTORY_CONTRACT_ADDRESS as Hex,
     abi: FACTORY_ABI,
     functionName: "getUser",
-    args: [BigInt(id)],
+    args: [BigInt(hashedId)],
   });
 
   if (user.account !== zeroAddress) {
@@ -28,7 +31,7 @@ export async function POST(req: Request) {
     address: process.env.NEXT_PUBLIC_FACTORY_CONTRACT_ADDRESS as Hex,
     abi: FACTORY_ABI,
     functionName: "saveUser",
-    args: [BigInt(id), pubKey],
+    args: [BigInt(hashedId), pubKey],
   });
 
   const smartWalletAddress = await PUBLIC_CLIENT.readContract({
