@@ -9,7 +9,7 @@ import {
   createPublicClient,
 } from "viem";
 import { SmartWalletActions, smartWalletActions } from "./decorators";
-import { transport } from "../config";
+import { pimlicoBundlerTransport } from "@/constants/client";
 import { ERC4337RpcSchema, UserOperationAsHex } from "@/libs/smart-wallet/service/userOps";
 import { CHAIN } from "@/constants";
 import { EstimateUserOperationGasReturnType } from "@/libs/smart-wallet/service/actions";
@@ -34,13 +34,14 @@ export const createSmartWalletClient = (parameters: PublicClientConfig): SmartWa
 };
 
 class SmartWallet {
-  private _client: SmartWalletClient;
+  private _client: SmartWalletClient; // For ERC-4337 UserOperations (uses Pimlico)
   private _isInitiated: boolean = false;
 
   constructor() {
+    // Smart wallet client for UserOperations (uses Pimlico bundler)
     this._client = createSmartWalletClient({
       chain: CHAIN,
-      transport,
+      transport: pimlicoBundlerTransport,
     });
   }
 

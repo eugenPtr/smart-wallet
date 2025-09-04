@@ -9,15 +9,23 @@ function useBalanceHook() {
   // balance in usd
   const [balance, setBalance] = useState<string>("--.--");
   const [increment, setIncrement] = useState<number>(0);
+  const [error, setError] = useState<string | null>(null);
 
   const { me } = useMe();
 
   const getBalanceUSD = useCallback(async (address: Hex) => {
-    const res = await getBalance(address);
-    const priceData = await fetch("/api/price?ids=ethereum&currencies=usd");
-    const price: number = Math.trunc((await priceData.json()).ethereum.usd * 100);
-    const balance = formatEther((BigInt(res.balance) * BigInt(price)) / BigInt(100));
-    setBalance(balance);
+    try {
+      setError(null);
+      const res = await getBalance(address);
+      const priceData = await fetch("/api/price?ids=ethereum&currencies=usd");
+      const price: number = Math.trunc((await priceData.json()).ethereum.usd * 100);
+      const balance = formatEther((BigInt(res.balance) * BigInt(price)) / BigInt(100));
+      setBalance(balance);
+    } catch (err) {
+      console.error('Error fetching balance:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch balance');
+      setBalance("Error");
+    }
   }, []);
 
   const refreshBalance = useCallback(() => {
@@ -41,6 +49,7 @@ function useBalanceHook() {
 
   return {
     balance,
+    error,
     getBalance,
     refreshBalance,
   };

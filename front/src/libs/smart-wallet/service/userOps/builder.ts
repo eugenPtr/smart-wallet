@@ -22,6 +22,7 @@ import { DEFAULT_USER_OP } from "@/libs/smart-wallet/service/userOps/constants";
 import { P256Credential, WebAuthn } from "@/libs/web-authn";
 import { ENTRYPOINT_ABI, ENTRYPOINT_ADDRESS, FACTORY_ABI } from "@/constants";
 import { smartWallet } from "@/libs/smart-wallet";
+import { alchemyTransport } from "@/constants/client";
 
 export class UserOpBuilder {
   public relayer: Hex = "0x061060a65146b3265C62fC8f3AE977c9B27260fF";
@@ -34,13 +35,13 @@ export class UserOpBuilder {
     this.chain = chain;
     this.publicClient = createPublicClient({
       chain,
-      transport: http(),
+      transport: alchemyTransport,
     });
 
     const walletClient = createWalletClient({
       account: this.relayer,
       chain,
-      transport: http(),
+      transport: alchemyTransport,
     });
 
     this.factoryContract = getContract({
@@ -234,6 +235,11 @@ export class UserOpBuilder {
     // Hash the ID to ensure it fits within 256-bit range for smart contract
     const hashedId = keccak256(id);
     const user = await this.factoryContract.read.getUser([BigInt(hashedId)]);
+    
+    if (user.account === "0x0000000000000000000000000000000000000000") {
+      throw new Error(`User with ID ${id} not found in factory contract. Please ensure the user is properly registered before sending transactions.`);
+    }
+    
     return { account: user.account, publicKey: user.publicKey };
   }
 

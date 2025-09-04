@@ -69,6 +69,7 @@ function useMeHook() {
       if (!credential) {
         return;
       }
+      
       const user = await getUser(credential.rawId);
 
       if (user?.account === undefined || user?.account === zeroAddress) {

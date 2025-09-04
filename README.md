@@ -46,7 +46,7 @@ This project was meant possible thanks to the building blocks previously made by
 
 - [Daimo](https://github.com/daimo-eth) and their [p256-verifier](https://github.com/daimo-eth/p256-verifier) for the onchain signature verification
 - [Infinitism](https://github.com/eth-infinitism/) and their work around [ERC-4337](https://eips.ethereum.org/EIPS/eip-4337)
-- [StackUp](https://www.stackup.sh/) and their work for the [Bundler node implementation](https://docs.stackup.sh/)
+- [Pimlico](https://www.pimlico.io/) and their work for the [Bundler and Paymaster infrastructure](https://docs.pimlico.io/)
 - [Matthew Miller](https://twitter.com/iamkale) and his work around [WebAuthn](https://github.com/MasterKale/SimpleWebAuthn)
 - [Webauthn.io](https://webauthn.guide/) for their great documentation around WebAuthn and their [demo](https://webauthn.io/)
 
@@ -85,7 +85,7 @@ The Smart Account is the contract implementing the ERC-4337 standard. Its addres
 
 ## Onchain interactions via UserOperations
 
-The ERC-4337 standard revolves around UserOperations, which are basically objects replacing transactions and that are sent on behalf of the user by nodes known as [`Bundlers`](https://docs.stackup.sh/docs/erc-4337-bundler#:~:text=In%20ERC%2D4337%2C%20a%20Bundler,work%20on%20any%20EVM%20network.). UserOperations are signed by the user with their passkey and the bundler's job is to include them in a block while taking a little fee for the work. In our case, we use the [StackUp Bundler node implementation](https://docs.stackup.sh/). We strongly advise you to look at Stackup documentation and the ERC-4337 EIP to understand how Bundlers work.
+The ERC-4337 standard revolves around UserOperations, which are basically objects replacing transactions and that are sent on behalf of the user by nodes known as [`Bundlers`](https://docs.pimlico.io/permissionless/bundler). UserOperations are signed by the user with their passkey and the bundler's job is to include them in a block while taking a little fee for the work. In our case, we use the [Pimlico Bundler implementation](https://docs.pimlico.io/). We strongly advise you to look at Pimlico documentation and the ERC-4337 EIP to understand how Bundlers work.
 
 ## Retrieving an account
 
@@ -103,7 +103,7 @@ On your first visit, create an account by entering a username. You will be asked
 ## Requirements
 
 - [pnpm](https://pnpm.io/installation)
-- [StackUp API KEY](https://app.stackup.sh/sign-in): to be able to include UserOperations in blocks, see [.env.local.example](./front/.env.local.example)
+- [Pimlico API KEY](https://dashboard.pimlico.io/): to be able to include UserOperations in blocks, see [.env.local.example](./front/.env.local.example)
 - a **TESTING** account with some Sepolia funds, to be able to sponsor user creation (see [.env.local.example](./front/.env.local.example)). Be careful to not use any private key tied to some real funds. **DO NOT LEAK YOUR PRIVATE KEYS**.
 - [Foundry](https://book.getfoundry.sh/getting-started/installation): if you want to deploy your own contracts.
 
@@ -120,7 +120,7 @@ Before running the front, you need to update the `.env.local` file with your own
 
 ```bash
 cp .env.local.example .env.local
-# Then update the values of the StackUp API KEY and the TESTING private key
+# Then update the values of the Pimlico API KEY and the TESTING private key
 ```
 
 ## Run

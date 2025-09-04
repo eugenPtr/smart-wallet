@@ -5,11 +5,17 @@ export const CHAIN = {
   ...sepolia,
 };
 
-export const transport = http(process.env.NEXT_PUBLIC_RPC_ENDPOINT);
+// Alchemy transport for standard Ethereum RPC calls
+export const alchemyTransport = http(process.env.NEXT_PUBLIC_ALCHEMY_RPC_ENDPOINT);
+
+// Pimlico bundler transport for ERC-4337 UserOperations
+export const pimlicoBundlerTransport = http(
+  `https://api.pimlico.io/v2/${CHAIN.id}/rpc?apikey=${process.env.NEXT_PUBLIC_PIMLICO_API_KEY}`
+);
 
 export const PUBLIC_CLIENT = createPublicClient({
   chain: sepolia,
-  transport,
+  transport: alchemyTransport,
 });
 
 export const MAINNET_PUBLIC_CLIENT = createPublicClient({
