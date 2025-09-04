@@ -18,17 +18,16 @@ export async function GET(_req: Request, { params }: { params: { id: Hex } }) {
     args: [BigInt(hashedId)],
   });
 
-  //const balance = await PUBLIC_CLIENT.getBalance({ address: user.account });
   let balance = BigInt(0);
 
-  // Using etherscan api instead of getBalance as Sepolia rcp node is not inconsistent
   if (user?.account) {
-    const result = await fetch(
-      `https://api-sepolia.etherscan.io/api?module=account&action=balance&address=${user.account}&tag=latest&apikey=${process.env.ETHERSCAN_API_KEY}`,
-      { cache: "no-store" },
-    );
-    const resultJSON = await result.json();
-    balance = BigInt(resultJSON?.result || 0);
+    try {
+      balance = await PUBLIC_CLIENT.getBalance({ address: user.account });
+    } catch (error) {
+      console.error('Error fetching balance from RPC:', error);
+      // Fallback to 0 balance if RPC fails
+      balance = BigInt(0);
+    }
   }
 
   return Response.json(JSON.parse(stringify({ ...user, id: toHex(user.id), balance })));

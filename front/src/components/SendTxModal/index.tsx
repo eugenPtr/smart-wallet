@@ -1,6 +1,7 @@
 "use client";
 
 import { Chain, EstimateFeesPerGasReturnType, Hash, Hex, parseEther } from "viem";
+import { PUBLIC_CLIENT } from "@/constants/client";
 import { smartWallet } from "@/libs/smart-wallet";
 import { useEffect, useRef, useState } from "react";
 import { Flex, Link, Button, Heading, Text, TextField, Callout } from "@radix-ui/themes";
@@ -106,11 +107,13 @@ export default function SendTxModal() {
     e.preventDefault();
 
     try {
+      if (!me?.keyId) throw new Error("No user found");
+
       const price: { ethereum: { usd: number } } = await (
         await fetch("/api/price?ids=ethereum&currencies=usd")
       ).json();
       const { maxFeePerGas, maxPriorityFeePerGas }: EstimateFeesPerGasReturnType =
-        await smartWallet.client.estimateFeesPerGas();
+        await PUBLIC_CLIENT.estimateFeesPerGas();
 
       const userOp = await builder.buildUserOp({
         calls: [

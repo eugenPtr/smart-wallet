@@ -9,7 +9,8 @@ import {
 import Spinner from "../Spinner";
 import { UserOpBuilder } from "@/libs/smart-wallet/service/userOps";
 import { smartWallet } from "@/libs/smart-wallet";
-import { Chain, Hash, formatEther } from "viem";
+import { Hash, Chain, formatEther } from "viem";
+import { PUBLIC_CLIENT } from "@/constants/client";
 import { useMe } from "@/providers/MeProvider";
 import { useBalance } from "@/providers/BalanceProvider";
 import { EthSendTransactionParams } from "@/libs/wallet-connect/config/EIP155";
@@ -67,7 +68,7 @@ export default function WCSendTransactionModal({ params, origin, onSuccess }: Pr
     try {
       if (!me?.keyId) throw new Error("No user found");
       const builder = new UserOpBuilder(smartWallet.client.chain as Chain);
-      const { maxFeePerGas, maxPriorityFeePerGas } = await smartWallet.client.estimateFeesPerGas();
+      const { maxFeePerGas, maxPriorityFeePerGas } = await PUBLIC_CLIENT.estimateFeesPerGas();
 
       const value = params?.value ? BigInt(params.value) : BigInt(0);
 

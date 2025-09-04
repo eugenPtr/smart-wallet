@@ -1,4 +1,4 @@
-import { CHAIN, PUBLIC_CLIENT, transport } from "@/constants";
+import { CHAIN, PUBLIC_CLIENT, alchemyTransport } from "@/constants";
 import { FACTORY_ABI } from "@/constants/factory";
 import { Hex, createWalletClient, toHex, zeroAddress, keccak256 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
@@ -10,7 +10,7 @@ export async function POST(req: Request) {
   const walletClient = createWalletClient({
     account,
     chain: CHAIN,
-    transport,
+    transport: alchemyTransport,
   });
 
   // Hash the ID to ensure it fits within 256-bit range for smart contract

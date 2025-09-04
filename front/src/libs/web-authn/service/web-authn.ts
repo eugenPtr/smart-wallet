@@ -1,5 +1,4 @@
-import crypto from "crypto";
-import { Hex, toHex } from "viem";
+import { Hex, toHex, hexToBytes } from "viem";
 import cbor from "cbor";
 import { parseAuthenticatorData } from "@simplewebauthn/server/helpers";
 import { AsnParser } from "@peculiar/asn1-schema";
@@ -13,8 +12,10 @@ import { generateRegistrationOptions } from "@simplewebauthn/server";
 export * from "@/libs/web-authn/types";
 
 export class WebAuthn {
-  private static _generateRandomBytes(): Buffer {
-    return crypto.randomBytes(16);
+  private static _generateRandomBytes(): Uint8Array {
+    const buffer = new Uint8Array(16);
+    crypto.getRandomValues(buffer);
+    return buffer;
   }
 
   public static isSupportedByBrowser(): boolean {
@@ -70,7 +71,7 @@ export class WebAuthn {
         id: window.location.hostname,
       },
       user: {
-        id: this._generateRandomBytes(),
+        id: this._generateRandomBytes() as BufferSource,
         name: username,
         displayName: username,
       },
@@ -125,7 +126,7 @@ export class WebAuthn {
     const options: PublicKeyCredentialRequestOptions = {
       timeout: 60000,
       challenge: challenge
-        ? Buffer.from(challenge.slice(2), "hex")
+        ? hexToBytes(challenge)
         : Uint8Array.from("random-challenge", (c) => c.charCodeAt(0)),
       rpId: window.location.hostname,
       userVerification: "preferred",

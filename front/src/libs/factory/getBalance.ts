@@ -7,8 +7,13 @@ export async function getBalance(address: Hex): Promise<{ balance: bigint }> {
     method: "GET",
   });
 
-  const user = await response.json();
+  const data = await response.json();
+  
+  if (!response.ok || data.error) {
+    throw new Error(data.error || `Failed to fetch balance: ${response.status}`);
+  }
+  
   return {
-    balance: user.balance,
+    balance: data.balance,
   };
 }
