@@ -9,7 +9,7 @@ import {
 import Spinner from "../Spinner";
 import { UserOpBuilder } from "@/libs/smart-wallet/service/userOps";
 import { smartWallet } from "@/libs/smart-wallet";
-import { Hex, parseEther } from "viem";
+import { Hash, Chain, formatEther } from "viem";
 import { PUBLIC_CLIENT } from "@/constants/client";
 import { useMe } from "@/providers/MeProvider";
 import { useBalance } from "@/providers/BalanceProvider";

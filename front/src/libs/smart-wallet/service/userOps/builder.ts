@@ -237,7 +237,7 @@ export class UserOpBuilder {
     const user = await this.factoryContract.read.getUser([BigInt(hashedId)]);
     
     if (user.account === "0x0000000000000000000000000000000000000000") {
-      throw new Error(`User with ID ${id} not found in factory contract. Please ensure the user is properly registered before sending transactions.`);
+      throw new Error(`User with ID ${BigInt(hashedId)} not found in factory contract. Please ensure the user is properly registered before sending transactions.`);
     }
     
     return { account: user.account, publicKey: user.publicKey };
