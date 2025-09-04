@@ -10,6 +10,7 @@ Live demo app: <a href="https://passkeys-4337.vercel.app" target="_blank">passke
 <div align="center">
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-red.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![CI](https://github.com/eugenPtr/smart-wallet/actions/workflows/ci.yml/badge.svg)](https://github.com/eugenPtr/smart-wallet/actions/workflows/ci.yml)
 [![Sepolia Testnet](https://img.shields.io/badge/Sepolia%20testnet-blue?&label=deployed%20on)](https://passkeys-4337.vercel.app/)
 [![ERC-4337](https://img.shields.io/badge/4337-teal?&label=ERC)](https://passkeys-4337.vercel.app/)
 [![Passkeys](https://img.shields.io/badge/Passkeys-teal?&label=Auth)](https://w3c.github.io/webauthn/)</br>

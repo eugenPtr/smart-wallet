@@ -9,11 +9,11 @@ env:
   FOUNDRY_PROFILE: ci
 
 jobs:
-  lint:
+  contracts-fmt-check:
     name: Lint contracts
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
 
@@ -25,18 +25,13 @@ jobs:
       - name: Run Forge format
         run: |
           cd contracts
-          forge --version
-          forge fmt
-        id: fmt
+          forge fmt --check
 
-  test:
-    strategy:
-      fail-fast: true
-
+  contracts-test:
     name: Test contracts
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
 
@@ -48,12 +43,37 @@ jobs:
       - name: Run Forge build
         run: |
           cd contracts
-          forge --version
           forge build --sizes
-        id: build
 
       - name: Run Forge tests
         run: |
           cd contracts
           forge test -vvv
-        id: test
+
+  build-frontend:
+    name: Build Next.js frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./front
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run ESLint
+        run: pnpm run lint
+
+      - name: Build application
+        run: pnpm run build
