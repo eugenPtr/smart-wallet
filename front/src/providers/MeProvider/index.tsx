@@ -2,7 +2,6 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { Address, Hex, zeroAddress } from "viem";
-import { WebAuthn } from "@/libs/web-authn/service/web-authn";
 import { saveUser } from "@/libs/factory";
 import { getUser } from "@/libs/factory/getUser";
 import { walletConnect } from "@/libs/wallet-connect/service/wallet-connect";
@@ -30,6 +29,7 @@ function useMeHook() {
   async function create(username: string) {
     setIsLoading(true);
     try {
+      const { WebAuthn } = await import("@/libs/web-authn/service/web-authn");
       const credential = await WebAuthn.create({ username });
 
       if (!credential) {
@@ -65,6 +65,7 @@ function useMeHook() {
   async function get() {
     setIsLoading(true);
     try {
+      const { WebAuthn } = await import("@/libs/web-authn/service/web-authn");
       const credential = await WebAuthn.get();
       if (!credential) {
         return;
