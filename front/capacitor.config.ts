@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'io.dev.coil.wallet',
+  appId: 'io.coil.wallet',
   appName: 'COIL wallet',
   webDir: 'out',
   ios: {

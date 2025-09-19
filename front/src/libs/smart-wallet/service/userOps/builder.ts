@@ -19,7 +19,6 @@ import {
 } from "viem";
 import { UserOperationAsHex, UserOperation, Call } from "@/libs/smart-wallet/service/userOps/types";
 import { DEFAULT_USER_OP } from "@/libs/smart-wallet/service/userOps/constants";
-import { P256Credential } from "@/libs/web-authn/types";
 import { ENTRYPOINT_ABI, ENTRYPOINT_ADDRESS, FACTORY_ABI } from "@/constants";
 import { smartWallet } from "@/libs/smart-wallet";
 import { alchemyTransport } from "@/constants/client";
