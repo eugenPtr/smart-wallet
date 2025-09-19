@@ -29,8 +29,8 @@ function useMeHook() {
   async function create(username: string) {
     setIsLoading(true);
     try {
-      const { WebAuthn } = await import("@/libs/web-authn/service/web-authn");
-      const credential = await WebAuthn.create({ username });
+      const { createPasskey } = await import("@/libs/web-authn/passkey-utils");
+      const credential = await createPasskey(username);
 
       if (!credential) {
         return;
@@ -60,13 +60,11 @@ function useMeHook() {
     } finally {
       setIsLoading(false);
     }
-  }
-
-  async function get() {
+  }  async function get() {
     setIsLoading(true);
     try {
-      const { WebAuthn } = await import("@/libs/web-authn/service/web-authn");
-      const credential = await WebAuthn.get();
+      const { authenticatePasskey } = await import("@/libs/web-authn/passkey-utils");
+      const credential = await authenticatePasskey();
       if (!credential) {
         return;
       }

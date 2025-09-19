@@ -19,7 +19,7 @@ import {
 } from "viem";
 import { UserOperationAsHex, UserOperation, Call } from "@/libs/smart-wallet/service/userOps/types";
 import { DEFAULT_USER_OP } from "@/libs/smart-wallet/service/userOps/constants";
-import { P256Credential } from "@/libs/web-authn";
+import { P256Credential } from "@/libs/web-authn/types";
 import { ENTRYPOINT_ABI, ENTRYPOINT_ADDRESS, FACTORY_ABI } from "@/constants";
 import { smartWallet } from "@/libs/smart-wallet";
 import { alchemyTransport } from "@/constants/client";
@@ -140,10 +140,10 @@ export class UserOpBuilder {
   }
 
   public async getSignature(msgToSign: Hex, keyId: Hex): Promise<Hex> {
-    const { WebAuthn } = await import("@/libs/web-authn");
-    const credentials: P256Credential = (await WebAuthn.get(msgToSign)) as P256Credential;
+    const { authenticatePasskey } = await import("@/libs/web-authn/passkey-utils");
+    const credentials = await authenticatePasskey(msgToSign);
 
-    if (credentials.rawId !== keyId) {
+    if (!credentials || credentials.rawId !== keyId) {
       throw new Error(
         "Incorrect passkeys used for tx signing. Please sign the transaction with the correct logged-in account",
       );

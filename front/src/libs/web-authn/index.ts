@@ -1,2 +1,3 @@
-export { WebAuthn } from "./service/web-authn";
+export * from "./types";
+export * from "./passkey-utils";
 export * from "./types";
