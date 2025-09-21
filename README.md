@@ -135,3 +135,148 @@ pnpm dev
 ```bash
 forge script DeploySimpleAccountFactory --rpc-url $RPC_URL --private-key $PRIVATE_KEY  --etherscan-api-key $ETHERSCAN_API_KEY --verify --slow --broadcast
 ```
+
+## Mobile Development (iOS/Android)
+
+This project includes a mobile app built with Capacitor. Here's the workflow for updating the native iOS app after making Next.js code changes:
+
+### Prerequisites
+- Xcode (for iOS development)
+- Android Studio (for Android development)
+- Capacitor CLI installed (`@capacitor/cli` in devDependencies)
+- ngrok (for iOS passkey development)
+
+### Initial Capacitor Setup
+
+If this is your first time setting up the project, you need to generate the native iOS and Android directories:
+
+```bash
+# Generate iOS directory and project files
+npx cap add ios
+
+# Generate Android directory and project files (optional)
+npx cap add android
+
+# Build your web app first
+npm run build
+
+# Sync web assets with native projects
+npx cap sync
+```
+
+**Note**: The `ios` and `android` directories are typically ignored in version control, so you'll need to run these commands after cloning the repository.
+
+### Setting up Passkeys for iOS Development with ngrok
+
+**Important**: iOS requires HTTPS domains for passkey (WebAuthn) functionality. For local development, you must use ngrok to tunnel your development server.
+
+#### 1. Install and Configure ngrok
+```bash
+# Install ngrok
+brew install ngrok/ngrok/ngrok
+
+# Sign up at https://ngrok.com and get your auth token
+ngrok authtoken YOUR_AUTH_TOKEN
+```
+
+#### 2. Configure Your iOS App ID
+The domain association server needs your specific iOS App ID. This consists of your Team ID + Bundle Identifier.
+
+**Easiest Method - Let the App Tell You:**
+1. Run your app in iOS Simulator without setting up the domain association
+2. Try to create a passkey in the app
+3. The error message will show your exact App ID in this format: `"Application with identifier TEAM_ID.BUNDLE_IDENTIFIER is not associated with domain"`
+4. Copy the App ID from the error message
+
+**Update your .env.local:**
+```bash
+# Add to .env.local - use the App ID from the error message or combine TEAM_ID.BUNDLE_IDENTIFIER
+IOS_APP_ID=4G5YQ8G38R.io.coil.wallet
+# Generate a domain on the ngrok dashboard
+NEXT_PUBLIC_NGROK_DOMAIN=rosita-geoponic-dwain.ngrok-free.app
+```
+
+#### 3. Set up Domain Association
+The iOS app needs to trust your ngrok domain. The domain association server will automatically serve the correct configuration using your App ID.
+
+#### 4. Configure iOS Associated Domains
+In Xcode, you need to add associated domains capability:
+
+1. Open the iOS project: `npx cap open ios`
+2. Select your app target
+3. Go to "Signing & Capabilities" tab
+4. Add "Associated Domains" capability
+5. Add these domains:
+   - `applinks:your-ngrok-domain`
+   - `webcredentials:your-ngrok-domain`
+
+#### 5. Development Workflow with ngrok
+
+1. **Start the domain association server:**
+   ```bash
+   cd dev
+   npm install
+   npm start
+   ```
+
+2. **In a new terminal, start ngrok:**
+   ```bash
+   ngrok http 8080 --domain=<YOUR_NGROK_DOMAIN>
+   ```
+
+3. **Build and sync Capacitor:**
+   ```bash
+   npm run build
+   npx cap sync ios
+   ```
+
+4. **Open in Xcode and run:**
+   ```bash
+   npx cap run ios
+   ```
+
+#### 5. Testing Passkeys
+- Passkeys will only work on device/simulator when accessed via the ngrok HTTPS URL
+- The domain association files are served at:
+  - `https://your.ngrok.domain/apple-app-site-association`
+
+#### Troubleshooting
+- **"Application not associated with domain"**: Verify associated domains are correctly set in Xcode
+- **Passkey creation fails**: Ensure ngrok is running and domain matches exactly
+
+### Development Workflow
+
+#### For Next.js code changes:
+```bash
+# 1. Build Next.js app
+npm run build
+
+# 2. Sync with native platforms (copies web assets and updates config)
+npx cap sync ios
+
+# 3. Open and run in Xcode
+npx cap run ios
+```
+
+#### For Capacitor config changes only:
+```bash
+# Sync configuration changes
+npx cap sync ios
+
+# Open in Xcode
+npx cap open ios
+```
+
+#### For Android:
+Replace `ios` with `android` in the commands above:
+```bash
+npm run build
+npx cap sync android
+npx cap run android
+```
+
+### Important Notes
+- Always run `npm run build` before syncing if you changed Next.js code
+- The `npx cap sync` command handles both configuration updates and web asset copying
+- For significant config changes (like bundle ID), you may need to clean: `npx cap sync ios --deployment`
+- **For passkeys**: Always use ngrok for iOS development and ensure domain association is properly configured

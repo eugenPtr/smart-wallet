@@ -10,8 +10,9 @@ import { shouldRemoveLeadingZero } from "@/utils/removeLeadingZero";
  * Get a safe rpId for the current environment
  */
 function getRpId(): string {
-  // Use ngrok domain for proper iOS domain association
-  return 'rosita-geoponic-dwain.ngrok-free.app';
+  // Check if we have a configured ngrok domain in environment
+  const ngrokDomain = process.env.NEXT_PUBLIC_NGROK_DOMAIN;
+  return ngrokDomain || '';
 }
 
 /**
@@ -48,19 +49,45 @@ export async function createPasskey(username: string): Promise<CreateCredential 
     // Extract public key from attestation object
     const attestationObjectBuffer = base64URLToArrayBuffer(credential.response.attestationObject);
     const decodedAttestationObj = cbor.decode(attestationObjectBuffer);
+    console.log("Decoded attestation object:", decodedAttestationObj);
+    
     const authData = parseAuthenticatorDataManual(decodedAttestationObj.authData);
     
     if (!authData?.credentialPublicKey) {
       throw new Error("Failed to extract public key from credential");
     }
     
-    const publicKey = cbor.decode(authData.credentialPublicKey.buffer as ArrayBuffer);
-    const x = toHex(publicKey.get(-2));
-    const y = toHex(publicKey.get(-3));
+    console.log("Auth data credential public key buffer:", authData.credentialPublicKey);
+    
+    const publicKeyBuffer = authData.credentialPublicKey;
+    const publicKey = cbor.decode(publicKeyBuffer as any);
+    console.log("Decoded public key:", publicKey, "Type:", typeof publicKey);
+    
+    // Handle both Map and Object formats
+    let x, y;
+    if (publicKey instanceof Map) {
+      x = publicKey.get(-2);
+      y = publicKey.get(-3);
+    } else if (publicKey && typeof publicKey === 'object') {
+      // Handle object format - CBOR keys are numeric
+      x = publicKey['-2'] || publicKey[-2];
+      y = publicKey['-3'] || publicKey[-3];
+    } else {
+      throw new Error("Unexpected public key format: " + typeof publicKey);
+    }
+    
+    if (!x || !y) {
+      console.error("Missing x or y coordinates:", { x, y, publicKey });
+      throw new Error("Failed to extract x,y coordinates from public key");
+    }
+    
+    // Convert to hex if they're Uint8Array
+    const xHex = x instanceof Uint8Array ? toHex(x) : toHex(new Uint8Array(x));
+    const yHex = y instanceof Uint8Array ? toHex(y) : toHex(new Uint8Array(y));
 
     return {
       rawId: fromBase64ToHex(credential.rawId),
-      pubKey: { x, y },
+      pubKey: { x: xHex, y: yHex },
     };
   } catch (error) {
     console.error("Failed to create passkey:", error);
