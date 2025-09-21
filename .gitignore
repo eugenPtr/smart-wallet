@@ -57,5 +57,5 @@ yarn-error.log*
 next-env.d.ts
 
 # capacitor
-ios
-android
+*/ios
+*/android
