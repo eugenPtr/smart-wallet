@@ -25,15 +25,29 @@ export default function Balance() {
     );
   }
   
-  let [intBalance, decimals] = balance.toString().split(".");
+  // Show loading state while balance is being fetched
+  if (balance === null) {
+    return (
+      <Flex style={css} direction="row" justify="center" align="center" gap="1">
+        <Text highContrast={true} weight="bold" size="9">
+          --
+        </Text>
+        <Text highContrast={true} weight="bold" size="6" style={{ color: "var(--accent-12)" }}>
+          .-- ETH
+        </Text>
+      </Flex>
+    );
+  }
+  
+  const [integerPart, decimalPart = "0000"] = balance.split(".");
 
   return (
-    <Flex style={css} direction="row" justify="center">
+    <Flex style={css} direction="row" justify="center" align="center" gap="1">
       <Text highContrast={true} weight="bold" size="9">
-        ${intBalance}
+        {integerPart}
       </Text>
       <Text highContrast={true} weight="bold" size="6" style={{ color: "var(--accent-12)" }}>
-        .{(decimals || "00").slice(0, 2)}
+        .{decimalPart.slice(0, 4)} ETH
       </Text>
     </Flex>
   );
