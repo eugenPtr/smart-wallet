@@ -5,6 +5,7 @@ import { CreateCredential, P256Credential, P256Signature } from "./types";
 import { fromBase64ToHex } from "@/utils/fromBase64ToHex";
 import { concatUint8Arrays } from "@/utils/arrayConcat";
 import { shouldRemoveLeadingZero } from "@/utils/removeLeadingZero";
+import forge from "node-forge";
 
 /**
  * Get a safe rpId for the current environment
@@ -12,7 +13,7 @@ import { shouldRemoveLeadingZero } from "@/utils/removeLeadingZero";
 function getRpId(): string {
   // Check if we have a configured ngrok domain in environment
   const ngrokDomain = process.env.NEXT_PUBLIC_NGROK_DOMAIN;
-  return ngrokDomain || '';
+  return ngrokDomain || 'localhost';
 }
 
 /**
@@ -181,11 +182,9 @@ function parseSignatureFromPasskey(signatureBase64Url: string): P256Signature {
   try {
     // Convert base64url to hex
     const signatureHex = fromBase64ToHex(signatureBase64Url);
-    
-    // The signature from native platforms is already in the correct format
-    // but it's a DER-encoded ECDSA signature, so we need to parse it
+    // The signature from native platforms is DER-encoded ECDSA, so parse with node-forge
     const signatureBytes = hexToBytes(signatureHex);
-    return parseSignatureManual(signatureBytes);
+    return parseSignature(signatureBytes);
   } catch (error) {
     console.error("Failed to parse passkey signature:", error);
     throw error;
@@ -202,73 +201,47 @@ function hexToBytes(hex: string): Uint8Array {
   return result;
 }
 
-// Manual signature parsing to avoid SimpleWebAuthn dependency
-function parseSignatureManual(signature: Uint8Array): P256Signature {
+// Parse a DER-encoded ECDSA signature using node-forge
+function parseSignature(signature: Uint8Array): P256Signature {
   try {
-    // Parse ASN.1 DER ECDSA signature manually
-    // ECDSA signature format: SEQUENCE { r INTEGER, s INTEGER }
-    
-    let offset = 0;
-    
-    // Check SEQUENCE tag (0x30)
-    if (signature[offset] !== 0x30) {
-      throw new Error("Invalid ASN.1 signature: missing SEQUENCE tag");
+    const bytesStr = String.fromCharCode(...signature);
+    const asn1 = forge.asn1.fromDer(bytesStr);
+    if (!asn1.value || asn1.value.length !== 2) {
+      throw new Error('Invalid ECDSA signature structure');
     }
-    offset++; // Skip SEQUENCE tag
-    
-    // Skip sequence length
-    const seqLength = signature[offset];
-    offset++; // Skip length byte
-    
-    // Parse r value
-    if (signature[offset] !== 0x02) {
-      throw new Error("Invalid ASN.1 signature: missing INTEGER tag for r");
+    // r and s are ASN.1 INTEGERs (as byte strings or objects)
+    const getRawBytes = (asn1Int: any) => {
+      if (typeof asn1Int === 'string') return asn1Int;
+      if (asn1Int && typeof asn1Int.value === 'string') return asn1Int.value;
+      throw new Error('Unexpected ASN.1 INTEGER format');
+    };
+    let rBytes = forge.util.createBuffer(getRawBytes(asn1.value[0]), 'raw').toHex();
+    let sBytes = forge.util.createBuffer(getRawBytes(asn1.value[1]), 'raw').toHex();
+    let r = hexToBytes(rBytes);
+    let s = hexToBytes(sBytes);
+    if (shouldRemoveLeadingZero(r)) {
+      r = r.slice(1);
     }
-    offset++; // Skip INTEGER tag
-    
-    const rLength = signature[offset];
-    offset++; // Skip length byte
-    
-    let rBytes = signature.slice(offset, offset + rLength);
-    offset += rLength;
-    
-    // Parse s value
-    if (signature[offset] !== 0x02) {
-      throw new Error("Invalid ASN.1 signature: missing INTEGER tag for s");
+    if (shouldRemoveLeadingZero(s)) {
+      s = s.slice(1);
     }
-    offset++; // Skip INTEGER tag
-    
-    const sLength = signature[offset];
-    offset++; // Skip length byte
-    
-    let sBytes = signature.slice(offset, offset + sLength);
-    
-    // Remove leading zeros if present
-    if (shouldRemoveLeadingZero(rBytes)) {
-      rBytes = rBytes.slice(1);
-    }
-    if (shouldRemoveLeadingZero(sBytes)) {
-      sBytes = sBytes.slice(1);
-    }
-    
-    // Ensure r and s are exactly 32 bytes each, pad if necessary
-    if (rBytes.length < 32) {
+    // Pad to 32 bytes if needed
+    if (r.length < 32) {
       const padded = new Uint8Array(32);
-      padded.set(rBytes, 32 - rBytes.length);
-      rBytes = padded;
+      padded.set(r, 32 - r.length);
+      r = padded;
     }
-    if (sBytes.length < 32) {
+    if (s.length < 32) {
       const padded = new Uint8Array(32);
-      padded.set(sBytes, 32 - sBytes.length);
-      sBytes = padded;
+      padded.set(s, 32 - s.length);
+      s = padded;
     }
-    
     return {
-      r: toHex(rBytes.slice(-32)), // Take last 32 bytes
-      s: toHex(sBytes.slice(-32)), // Take last 32 bytes
+      r: toHex(r.slice(-32)),
+      s: toHex(s.slice(-32)),
     };
   } catch (error) {
-    console.error("Failed to parse signature:", error);
+    console.error('Failed to parse signature with node-forge:', error);
     throw error;
   }
 }

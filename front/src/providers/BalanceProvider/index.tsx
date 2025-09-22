@@ -6,25 +6,22 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { Hex, formatEther } from "viem";
 
 function useBalanceHook() {
-  // balance in usd
-  const [balance, setBalance] = useState<string>("--.--");
+  // balance in ETH - null indicates loading state
+  const [balance, setBalance] = useState<string | null>(null);
   const [increment, setIncrement] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
 
   const { me } = useMe();
 
-  const getBalanceUSD = useCallback(async (address: Hex) => {
+  const fetchBalanceInETH = useCallback(async (address: Hex) => {
     try {
       setError(null);
       const res = await getBalance(address);
-      const priceData = await fetch("/api/price?ids=ethereum&currencies=usd");
-      const price: number = Math.trunc((await priceData.json()).ethereum.usd * 100);
-      const balance = formatEther((BigInt(res.balance) * BigInt(price)) / BigInt(100));
-      setBalance(balance);
+      const balanceInETH = formatEther(res.balance);
+      setBalance(balanceInETH);
     } catch (err) {
       console.error('Error fetching balance:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch balance');
-      setBalance("Error");
     }
   }, []);
 
@@ -36,16 +33,17 @@ function useBalanceHook() {
 
   useEffect(() => {
     if (!me?.account) return;
-    getBalanceUSD(me?.account);
+    
+    fetchBalanceInETH(me?.account);
     interval.current && clearInterval(interval.current);
     interval.current = setInterval(() => {
-      getBalanceUSD(me?.account);
+      fetchBalanceInETH(me?.account);
     }, 5000);
 
     return () => {
       interval.current && clearInterval(interval.current);
     };
-  }, [me?.account, getBalanceUSD, increment]);
+  }, [me?.account, fetchBalanceInETH, increment]);
 
   return {
     balance,

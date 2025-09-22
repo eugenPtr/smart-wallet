@@ -37,8 +37,9 @@ export class UserOpBuilder {
       transport: alchemyTransport,
     });
 
+    // Use a neutral account (zeroAddress) for contract instantiation, not the relayer
     const walletClient = createWalletClient({
-      account: this.relayer,
+      account: zeroAddress,
       chain,
       transport: alchemyTransport,
     });
@@ -110,6 +111,27 @@ export class UserOpBuilder {
     userOp.verificationGasLimit =
       BigInt(verificationGasLimit) + BigInt(150_000) + BigInt(initCodeGas) + BigInt(1_000_000);
 
+    // Always sponsor with Pimlico paymaster
+    const pimlicoApiKey = process.env.NEXT_PUBLIC_PIMLICO_API_KEY;
+    if (!pimlicoApiKey) throw new Error("Missing NEXT_PUBLIC_PIMLICO_API_KEY in env");
+    const pimlicoUrl = `https://api.pimlico.io/v2/${this.chain.id}/rpc?apikey=${pimlicoApiKey}`;
+    const params = [this.toParams(userOp), this.entryPoint];
+    const response = await fetch(pimlicoUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "pm_sponsorUserOperation",
+        params,
+      }),
+    });
+    const data = await response.json();
+    if (!data.result || !data.result.paymasterAndData) {
+      throw new Error("Failed to get paymasterAndData from Pimlico");
+    }
+    userOp.paymasterAndData = data.result.paymasterAndData;
+
     // get userOp hash (with signature == 0x) by calling the entry point contract
     const userOpHash = await this._getUserOpHash(userOp);
 
@@ -118,7 +140,6 @@ export class UserOpBuilder {
 
     // get signature from webauthn
     const signature = await this.getSignature(msgToSign, keyId);
-
     return this.toParams({ ...userOp, signature });
   }
 
@@ -217,8 +238,10 @@ export class UserOpBuilder {
       [this.factoryContract.address, createAccountTx], // values
     );
 
+    // Omit the account parameter for gas estimation
+    // viem requires an account parameter for estimateGas, so we use zeroAddress as a neutral value
     let initCodeGas = await this.publicClient.estimateGas({
-      account: this.relayer,
+      account: zeroAddress,
       to: this.factoryContract.address,
       data: createAccountTx,
     });

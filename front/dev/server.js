@@ -14,9 +14,17 @@ console.log(`Using App ID: ${APP_ID}`);
 // Enable CORS for all routes
 app.use(cors());
 
+// Log ALL incoming requests to debug what iOS is trying to access
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  console.log(`[${new Date().toISOString()}] Headers:`, req.headers);
+  console.log(`[${new Date().toISOString()}] User-Agent: ${req.get('User-Agent')}`);
+  next();
+});
+
 // Serve the apple-app-site-association file with correct headers
-app.get('/apple-app-site-association', (req, res) => {
-  res.setHeader('Content-Type', 'application/json');
+const serveAASA = (req, res) => {
+  res.setHeader('Content-Type', 'application/pkcs7-mime');
   res.setHeader('Cache-Control', 'no-cache');
   
   const association = {
@@ -37,7 +45,11 @@ app.get('/apple-app-site-association', (req, res) => {
   };
   
   res.json(association);
-});
+};
+
+// Serve AASA file at both standard locations
+app.get('/apple-app-site-association', serveAASA);
+app.get('/.well-known/apple-app-site-association', serveAASA);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -61,6 +73,13 @@ app.get('/', (req, res) => {
       '4. Run in Xcode: npx cap open ios'
     ]
   });
+});
+
+// Catch-all route to log any unhandled requests
+app.get('*', (req, res) => {
+  console.log(`[${new Date().toISOString()}] ⚠️  UNHANDLED REQUEST: ${req.method} ${req.url}`);
+  console.log(`[${new Date().toISOString()}] ⚠️  This might be what iOS is looking for!`);
+  res.status(404).json({ error: 'Not found', requestedPath: req.url });
 });
 
 app.listen(port, () => {

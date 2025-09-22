@@ -55,12 +55,11 @@ export default function SendTxModal() {
   function handleUserInputAmount(e: any) {
     const value = e.target.value;
     const amount = Number(value);
-    if ((amount > Number(balance) && value !== "") || value === "") {
-      setIsBelowBalance(false);
-    }
-    if (amount <= Number(balance) && value !== "") {
-      setIsBelowBalance(true);
-    }
+    const availableBalance = balance ? Number(balance) : 0;
+    
+    // Check if user can afford this amount
+    const canAfford = amount <= availableBalance && value !== "";
+    setIsBelowBalance(canAfford);
     setUserInputAmount(value);
   }
 
@@ -109,9 +108,6 @@ export default function SendTxModal() {
     try {
       if (!me?.keyId) throw new Error("No user found");
 
-      const price: { ethereum: { usd: number } } = await (
-        await fetch("/api/price?ids=ethereum&currencies=usd")
-      ).json();
       const { maxFeePerGas, maxPriorityFeePerGas }: EstimateFeesPerGasReturnType =
         await PUBLIC_CLIENT.estimateFeesPerGas();
 
@@ -119,9 +115,7 @@ export default function SendTxModal() {
         calls: [
           {
             dest: destination.toLowerCase() as Hex,
-            value:
-              BigInt(parseEther(userInputAmount)) /
-              (BigInt(Math.trunc(price.ethereum.usd * 100)) / BigInt(100)), // 100 is the price precision
+            value: parseEther(userInputAmount),
             data: emptyHex,
           },
         ],
@@ -252,17 +246,17 @@ export default function SendTxModal() {
                   <Flex direction="column" gap="2">
                     <TextField.Root>
                       <TextField.Slot style={{ color: "var(--accent-11)", paddingLeft: "1rem" }}>
-                        USD:
+                        ETH:
                       </TextField.Slot>
                       <TextField.Input
                         required
-                        placeholder="0.00"
+                        placeholder="0.0000"
                         type="number"
                         inputMode="decimal"
                         min={0}
                         max={balance?.toString() || 0}
                         size={"3"}
-                        step={0.01}
+                        step="any"
                         value={userInputAmount}
                         onChange={handleUserInputAmount}
                       />
@@ -286,7 +280,7 @@ export default function SendTxModal() {
                       style={{ paddingInline: "0.5rem", alignSelf: "flex-end" }}
                       color="gray"
                     >
-                      ${balance.toString().slice(0, 4)} available
+                      {balance ? `${balance.slice(0, 8)} ETH available` : '-- ETH available'}
                     </Text>
                   </Flex>
                 </Flex>
